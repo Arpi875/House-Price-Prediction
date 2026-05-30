@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>House Price Predictor 🏠</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --p1:#7C3AED; --p2:#DB2777; --p3:#F97316;
+      --g1:linear-gradient(135deg,#7C3AED 0%,#DB2777 55%,#F97316 100%);
+      --g2:linear-gradient(135deg,#059669 0%,#0EA5E9 100%);
+      --g3:linear-gradient(135deg,#EF4444 0%,#F97316 100%);
+      --bg:#F3F0FF; --card:#fff;
+      --text:#111827; --muted:#6B7280; --border:#E5E7EB;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Nunito',sans-serif;background:var(--bg);min-height:100vh;padding:1.5rem 1rem 4rem;}
+
+    /* ── HERO ── */
+    .hero{
+      background:var(--g1);
+      border-radius:28px;
+      padding:2.8rem 2rem 2.2rem;
+      text-align:center;
+      color:#fff;
+      position:relative;
+      overflow:hidden;
+      max-width:860px;
+      margin:0 auto 2rem;
+      box-shadow:0 12px 40px rgba(124,58,237,.35);
+    }
+    .hero::before{content:'';position:absolute;width:280px;height:280px;background:rgba(255,255,255,.07);border-radius:50%;top:-90px;right:-60px;}
+    .hero::after {content:'';position:absolute;width:160px;height:160px;background:rgba(255,255,255,.05);border-radius:50%;bottom:-50px;left:-25px;}
+    .hero-icon{font-size:3rem;margin-bottom:.5rem;position:relative;z-index:1;}
+    .hero h1{font-family:'Baloo 2',cursive;font-size:2.3rem;font-weight:800;position:relative;z-index:1;margin-bottom:.35rem;letter-spacing:-.01em;}
+    .hero p{font-size:.95rem;opacity:.88;position:relative;z-index:1;max-width:520px;margin:0 auto;}
+    .badges{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:1.1rem;position:relative;z-index:1;}
+    .badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 16px;font-size:.78rem;font-weight:700;}
+
+    /* ── LAYOUT ── */
+    .wrap{max-width:860px;margin:0 auto;}
+    .card{background:var(--card);border-radius:20px;padding:1.6rem;margin-bottom:1.3rem;box-shadow:0 2px 14px rgba(0,0,0,.07);}
+    .card-title{
+      font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;
+      color:var(--text);display:flex;align-items:center;gap:9px;
+      margin-bottom:1.1rem;padding-bottom:.7rem;
+      border-bottom:2px solid #EDE9FE;
+    }
+    .card-title .ico{font-size:1.3rem;}
+
+    /* ── GRID + FIELDS ── */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:13px;}
+    .fw{display:flex;flex-direction:column;gap:5px;}
+    .fw label{font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+    .fw input,.fw select{
+      padding:10px 13px;font-size:.9rem;font-family:'Nunito',sans-serif;
+      border-radius:11px;border:1.5px solid var(--border);
+      background:#FAFAFA;color:var(--text);
+      outline:none;transition:border-color .2s,background .2s,box-shadow .2s;width:100%;
+    }
+    .fw input:focus,.fw select:focus{border-color:var(--p1);background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.1);}
+
+    /* radio toggle */
+    .toggle-group{display:flex;gap:8px;}
+    .toggle-group label{
+      flex:1;text-align:center;padding:9px 6px;border-radius:10px;
+      border:1.5px solid var(--border);font-size:.85rem;font-weight:600;
+      cursor:pointer;transition:all .2s;background:#FAFAFA;color:var(--muted);
+    }
+    .toggle-group input[type=radio]{display:none;}
+    .toggle-group input[type=radio]:checked + label{
+      background:var(--p1);border-color:var(--p1);color:#fff;
+      box-shadow:0 3px 10px rgba(124,58,237,.3);
+    }
+
+    /* tip pill */
+    .tip-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      background:#EDE9FE;color:#5B21B6;
+      border-radius:8px;padding:5px 12px;font-size:.76rem;font-weight:600;
+      margin-top:8px;
+    }
+
+    /* ── PREDICT BTN ── */
+    .btn-wrap{max-width:860px;margin:0 auto;}
+    .btn{
+      width:100%;padding:1.05rem;background:var(--g1);
+      border:none;border-radius:16px;color:#fff;
+      font-family:'Baloo 2',cursive;font-size:1.18rem;font-weight:800;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+      transition:opacity .15s,transform .15s;
+      box-shadow:0 5px 18px rgba(124,58,237,.42);letter-spacing:.01em;
+    }
+    .btn:hover{opacity:.9;transform:translateY(-2px);}
+    .btn:active{transform:scale(.98);}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+    /* ── RESULT ── */
+    .result{display:none;max-width:860px;margin:1.4rem auto 0;border-radius:22px;overflow:hidden;box-shadow:0 8px 30px rgba(5,150,105,.28);}
+    .result.show{display:block;}
+    .result-top{background:var(--g2);padding:2.2rem 2rem;text-align:center;color:#fff;}
+    .result-tag{font-size:.82rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.85;}
+    .result-price{font-family:'Baloo 2',cursive;font-size:3.2rem;font-weight:800;margin:.3rem 0;line-height:1;}
+    .result-sub{font-size:.86rem;opacity:.8;margin-top:.4rem;}
+    .result-chips{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;}
+    .chip{padding:1rem;text-align:center;border-right:1px solid #F3F4F6;}
+    .chip:last-child{border-right:none;}
+    .chip-val{font-family:'Baloo 2',cursive;font-size:1.1rem;font-weight:700;color:#1E1B4B;}
+    .chip-lbl{font-size:.71rem;color:var(--muted);margin-top:3px;}
+
+    /* ── ERROR ── */
+    .err{display:none;max-width:860px;margin:1rem auto 0;background:var(--g3);
+      border-radius:14px;padding:1.1rem 1.5rem;color:#fff;font-size:.9rem;
+      text-align:center;box-shadow:0 4px 14px rgba(239,68,68,.3);}
+    .err.show{display:block;}
+
+    /* ── WARN (unknown location) ── */
+    .warn{display:none;max-width:860px;margin:.8rem auto 0;background:#FEF3C7;
+      border:1.5px solid #FCD34D;border-radius:12px;padding:.8rem 1.2rem;
+      color:#92400E;font-size:.84rem;}
+    .warn.show{display:block;}
+
+    /* loading dots */
+    .dot{display:inline-block;animation:blink 1.1s infinite;font-size:1.4rem;}
+    .d2{animation-delay:.2s;}.d3{animation-delay:.4s;}
+    @keyframes blink{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+
+    @media(max-width:560px){
+      .hero h1{font-size:1.7rem;}
+      .result-price{font-size:2.3rem;}
+      .result-chips{grid-template-columns:1fr;}
+      .chip{border-right:none;border-bottom:1px solid #F3F4F6;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-icon">🏠</div>
+  <h1>House Price Predictor</h1>
+  <p>Fill in the property details below and get an instant AI-powered price estimate.</p>
+  <div class="badges">
+    <span class="badge">🤖 Random Forest Model</span>
+    <span class="badge">📊 Trained on Real Data</span>
+    <span class="badge">⚡ Instant Result</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- CARD 1: Property Basics -->
+  <div class="card">
+    <div class="card-title"><span class="ico">🏢</span> Property Basics</div>
+    <div class="grid">
+
+      <div class="fw">
+        <label>BHK</label>
+        <select id="bhk">
+          <option value="">-- Select --</option>
+          <option value="1">1 BHK</option>
+          <option value="2" selected>2 BHK</option>
+          <option value="3">3 BHK</option>
+          <option value="4">4 BHK</option>
+          <option value="5">5 BHK</option>
+        </select>
+      </div>
+
+      <div class="fw">
+        <label>Carpet Area (sqft)</label>
+        <input type="number" id="carpet_sqft" placeholder="e.g. 650" min="100" max="9999"/>
+      </div>
+
+      <div class="fw">
+        <label>Bathrooms</label>
+        <select id="bathroom">
+          <option value="">-- Select --</option>
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </div>
+
+      <div class="fw">
+        <label>Location</label>
+        <input type="text" id="location" placeholder="e.g. thane" list="loc-list" autocomplete="off"/>
+        <datalist id="loc-list"></datalist>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CARD 2: Floor Details -->
+  <div class="card">
+    <div class="card-title"><span class="ico">📐</span> Floor Details</div>
+    <div class="grid">
+
+      <div class="fw">
+        <label>Floor Number</label>
+        <input type="number" id="floor_num" placeholder="e.g. 10" min="0" max="100"/>
+      </div>
+
+      <div class="fw">
+        <label>Total Floors in Building</label>
+        <input type="number" id="total_floors" placeholder="e.g. 22" min="1" max="100"/>
+      </div>
+
+    </div>
+    <div class="tip-pill">💡 Floor Ratio = Floor ÷ Total Floors — auto calculated</div>
+  </div>
+
+  <!-- CARD 3: Property Type -->
+  <div class="card">
+    <div class="card-title"><span class="ico">🔑</span> Property Type</div>
+    <div class="grid">
+
+      <div class="fw">
+        <label>Status</label>
+        <div class="toggle-group">
+          <input type="radio" name="is_ready" id="r1" value="1" checked/>
+          <label for="r1">✅ Ready to Move</label>
+          <input type="radio" name="is_ready" id="r2" value="0"/>
+          <label for="r2">🏗️ Under Construction</label>
+        </div>
+      </div>
+
+      <div class="fw">
+        <label>Transaction</label>
+        <div class="toggle-group">
+          <input type="radio" name="is_resale" id="t1" value="1" checked/>
+          <label for="t1">🔄 Resale</label>
+          <input type="radio" name="is_resale" id="t2" value="0"/>
+          <label for="t2">🆕 New Property</label>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CARD 4: Pricing Input -->
+  <div class="card">
+    <div class="card-title"><span class="ico">💰</span> Market Price Reference</div>
+    <div class="grid">
+      <div class="fw">
+        <label>Price per sqft (₹)</label>
+        <input type="number" id="price_per_sqft" placeholder="e.g. 8500" min="500" max="500000"/>
+      </div>
+    </div>
+    <div class="tip-pill">💡 Check MagicBricks / 99acres for current area rates</div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- PREDICT BUTTON -->
+<div class="btn-wrap" style="max-width:860px;margin:0 auto;padding:0;">
+  <button class="btn" id="predict-btn" onclick="predict()">
+    🧠 Predict House Price
+  </button>
+</div>
+
+<!-- WARN -->
+<div class="warn" id="warn-box">
+  ⚠️ <strong>Unknown Location:</strong> This location wasn't found in our training data. Prediction may be less accurate. Try a nearby area name.
+</div>
+
+<!-- RESULT -->
+<div class="result" id="result-box">
+  <div class="result-top">
+    <div class="result-tag">Estimated Price</div>
+    <div class="result-price" id="result-price">₹ --</div>
+    <div class="result-sub" id="result-sub">—</div>
+  </div>
+  <div class="result-chips">
+    <div class="chip"><div class="chip-val" id="chip-bhk">--</div><div class="chip-lbl">BHK</div></div>
+    <div class="chip"><div class="chip-val" id="chip-area">--</div><div class="chip-lbl">Carpet Area</div></div>
+    <div class="chip"><div class="chip-val" id="chip-loc">--</div><div class="chip-lbl">Location</div></div>
+  </div>
+</div>
+
+<!-- ERROR -->
+<div class="err" id="err-box">
+  ⚠️ <span id="err-msg">Something went wrong. Please try again.</span>
+</div>
+
+<script>
+  // ── API URL — same origin when served from Flask ──────────────────────────
+  const API = "";   // empty = same server; for local dev keep as ""
+
+  // ── Load locations for autocomplete ──────────────────────────────────────
+  async function loadLocations() {
+    try {
+      const res  = await fetch(API + "/locations");
+      const data = await res.json();
+      const dl   = document.getElementById("loc-list");
+      data.locations.forEach(l => {
+        const opt = document.createElement("option");
+        opt.value = l;
+        dl.appendChild(opt);
+      });
+    } catch(_) {}
+  }
+  loadLocations();
+
+  // ── Predict ───────────────────────────────────────────────────────────────
+  async function predict() {
+    const btn    = document.getElementById("predict-btn");
+    const resBox = document.getElementById("result-box");
+    const errBox = document.getElementById("err-box");
+    const warnBox= document.getElementById("warn-box");
+    resBox.classList.remove("show");
+    errBox.classList.remove("show");
+    warnBox.classList.remove("show");
+
+    // ── Collect values ────────────────────────────────────────────────────
+    const bhk           = document.getElementById("bhk").value;
+    const carpet_sqft   = document.getElementById("carpet_sqft").value;
+    const bathroom      = document.getElementById("bathroom").value;
+    const location      = document.getElementById("location").value.trim().toLowerCase();
+    const floor_num     = document.getElementById("floor_num").value;
+    const total_floors  = document.getElementById("total_floors").value;
+    const is_ready      = document.querySelector('input[name="is_ready"]:checked').value;
+    const is_resale     = document.querySelector('input[name="is_resale"]:checked').value;
+    const price_per_sqft= document.getElementById("price_per_sqft").value;
+
+    // ── Validation ────────────────────────────────────────────────────────
+    const missing = [];
+    if (!bhk)            missing.push("BHK");
+    if (!carpet_sqft)    missing.push("Carpet Area");
+    if (!bathroom)       missing.push("Bathrooms");
+    if (!location)       missing.push("Location");
+    if (!floor_num)      missing.push("Floor Number");
+    if (!total_floors)   missing.push("Total Floors");
+    if (!price_per_sqft) missing.push("Price per sqft");
+
+    if (missing.length) {
+      document.getElementById("err-msg").textContent =
+        "Please fill: " + missing.join(", ");
+      errBox.classList.add("show");
+      return;
+    }
+
+    if (parseFloat(floor_num) > parseFloat(total_floors)) {
+      document.getElementById("err-msg").textContent =
+        "Floor number cannot be greater than total floors.";
+      errBox.classList.add("show");
+      return;
+    }
+
+    // ── Loading state ─────────────────────────────────────────────────────
+    btn.disabled = true;
+    btn.innerHTML = '<span class="dot">●</span><span class="dot d2">●</span><span class="dot d3">●</span>';
+
+    try {
+      const res  = await fetch(API + "/predict", {
+        method : "POST",
+        headers: { "Content-Type": "application/json" },
+        body   : JSON.stringify({
+          bhk           : parseFloat(bhk),
+          carpet_sqft   : parseFloat(carpet_sqft),
+          floor_num     : parseFloat(floor_num),
+          total_floors  : parseFloat(total_floors),
+          location      : location,
+          is_ready      : parseInt(is_ready),
+          is_resale     : parseInt(is_resale),
+          bathroom      : parseFloat(bathroom),
+          price_per_sqft: parseFloat(price_per_sqft)
+        })
+      });
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
+      // ── Show result ───────────────────────────────────────────────────
+      document.getElementById("result-price").textContent = data.price_display;
+      document.getElementById("result-sub").textContent   =
+        location.toUpperCase() + " — " + carpet_sqft + " sqft | " + bhk + " BHK";
+      document.getElementById("chip-bhk").textContent  = bhk + " BHK";
+      document.getElementById("chip-area").textContent = carpet_sqft + " sqft";
+      document.getElementById("chip-loc").textContent  = location;
+
+      resBox.classList.add("show");
+
+      if (!data.location_known) warnBox.classList.add("show");
+
+      resBox.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    } catch (e) {
+      document.getElementById("err-msg").textContent =
+        "Backend not reachable. Make sure Flask server is running.";
+      errBox.classList.add("show");
+    } finally {
+      btn.disabled  = false;
+      btn.innerHTML = "🧠 Predict House Price";
+    }
+  }
+</script>
+</body>
+</html>
