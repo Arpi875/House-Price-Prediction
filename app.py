@@ -8,35 +8,35 @@ from flask_cors import CORS
 app = Flask(__name__, static_folder="static")
 CORS(app)
 
-# ── Model + Location Map Load ─────────────────────────────────────────────────
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "best_model_tuned.pkl")
 MAP_PATH   = os.path.join(BASE_DIR, "location_map.pkl")
 
+# ── Load model + location map ─────────────────────────────────────────────────
 try:
-    model        = joblib.load(MODEL_PATH)
+    model = joblib.load(MODEL_PATH)
+    print(f"[OK] Model loaded successfully")
+except Exception as e:
+    model = None
+    print(f"[WARN] Model load failed: {e}")
+
+try:
     location_map = joblib.load(MAP_PATH)
-    print(f"[OK] Model loaded  : {MODEL_PATH}")
-    print(f"[OK] Location map  : {len(location_map)} locations")
-except FileNotFoundError as e:
-    model        = None
+    print(f"[OK] Location map loaded: {len(location_map)} locations")
+except Exception as e:
     location_map = {}
-    print(f"[WARN] {e}")
+    print(f"[WARN] Location map load failed: {e}")
 
-
-# ── Helper ────────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 def format_price(price_lac: float) -> str:
-    """Convert Lac value to readable Indian format."""
     if price_lac >= 100:
-        return f"₹{price_lac / 100:.2f} Cr"
+        return f"₹{price_lac/100:.2f} Crore"
     return f"₹{price_lac:.2f} Lac"
-
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
-
 
 @app.route("/health")
 def health():
@@ -46,23 +46,17 @@ def health():
         "locations"   : len(location_map)
     })
 
-
 @app.route("/locations")
 def locations():
-    """Return all known locations for autocomplete."""
-    locs = sorted(location_map.keys())
-    return jsonify({"locations": locs})
-
+    return jsonify({"locations": sorted(location_map.keys())})
 
 @app.route("/predict", methods=["POST"])
 def predict():
     if model is None:
-        return jsonify({"error": "Model load nahi hua. best_model_tuned.pkl check karein."}), 500
-
+        return jsonify({"error": "Model not loaded."}), 500
     try:
         data = request.get_json(force=True)
 
-        # ── Parse inputs ──────────────────────────────────────────────────────
         bhk            = float(data.get("bhk", 2))
         carpet_sqft    = float(data.get("carpet_sqft", 0))
         floor_num      = float(data.get("floor_num", 1))
@@ -73,14 +67,12 @@ def predict():
         bathroom       = float(data.get("bathroom", 2))
         price_per_sqft = float(data.get("price_per_sqft", 0))
 
-        # ── Derived features (same as notebook) ──────────────────────────────
         floor_ratio      = floor_num / total_floors if total_floors > 0 else 0
-        location_encoded = location_map.get(location, 1)   # fallback=1 for unknown
+        location_encoded = location_map.get(location, 1)
 
-        # ── Build DataFrame — exact same column order as training ─────────────
-        features = ["BHK", "Carpet_sqft", "Floor_num", "Total_floors",
-                    "Floor_ratio", "location_encoded", "is_ready",
-                    "is_resale", "Bathroom", "price_per_sqft"]
+        features = ["BHK","Carpet_sqft","Floor_num","Total_floors",
+                    "Floor_ratio","location_encoded","is_ready",
+                    "is_resale","Bathroom","price_per_sqft"]
 
         row = pd.DataFrame([{
             "BHK"             : bhk,
@@ -95,24 +87,18 @@ def predict():
             "price_per_sqft"  : price_per_sqft
         }])[features]
 
-        # ── Predict (model output is log1p scale) ─────────────────────────────
         log_pred  = model.predict(row)[0]
         price_lac = float(np.expm1(log_pred))
 
         return jsonify({
-            "status"         : "success",
-            "price_lac"      : round(price_lac, 2),
-            "price_display"  : format_price(price_lac),
-            "location_known" : location in location_map,
-            "floor_ratio"    : round(floor_ratio, 3),
-            "location_encoded": location_encoded
+            "status"        : "success",
+            "price_lac"     : round(price_lac, 2),
+            "price_display" : format_price(price_lac),
+            "location_known": location in location_map,
         })
 
-    except (ValueError, KeyError) as e:
-        return jsonify({"error": f"Input error: {str(e)}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
