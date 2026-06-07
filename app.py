@@ -65,27 +65,26 @@ def predict():
         is_ready       = int(data.get("is_ready", 1))
         is_resale      = int(data.get("is_resale", 1))
         bathroom       = float(data.get("bathroom", 2))
-        price_per_sqft = float(data.get("price_per_sqft", 0))
+       
 
         floor_ratio      = floor_num / total_floors if total_floors > 0 else 0
         location_encoded = location_map.get(location, 1)
 
-        features = ["BHK","Carpet_sqft","Floor_num","Total_floors",
-                    "Floor_ratio","location_encoded","is_ready",
-                    "is_resale","Bathroom","price_per_sqft"]
+       features = ["BHK","Carpet_sqft","Floor_num","Total_floors",
+            "Floor_ratio","location_encoded","is_ready",
+            "is_resale","Bathroom"]
 
-        row = pd.DataFrame([{
-            "BHK"             : bhk,
-            "Carpet_sqft"     : carpet_sqft,
-            "Floor_num"       : floor_num,
-            "Total_floors"    : total_floors,
-            "Floor_ratio"     : floor_ratio,
-            "location_encoded": location_encoded,
-            "is_ready"        : is_ready,
-            "is_resale"       : is_resale,
-            "Bathroom"        : bathroom,
-            "price_per_sqft"  : price_per_sqft
-        }])[features]
+    row = pd.DataFrame([{
+    "BHK"             : bhk,
+    "Carpet_sqft"     : carpet_sqft,
+    "Floor_num"       : floor_num,
+    "Total_floors"    : total_floors,
+    "Floor_ratio"     : floor_ratio,
+    "location_encoded": location_encoded,
+    "is_ready"        : is_ready,
+    "is_resale"       : is_resale,
+    "Bathroom"        : bathroom,
+}])[features]
 
         log_pred  = model.predict(row)[0]
         price_lac = float(np.expm1(log_pred))
